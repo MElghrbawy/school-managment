@@ -45,7 +45,7 @@ module.exports = class ApiHandler {
             this.methodMatrix[mk][method] = [];
           }
           this.methodMatrix[mk][method].push(fnName);
-          console.log(`* ${i} :`, "method=", method, "fnName=", fnName);
+          console.log(`* ${mk} :`, "method=", method, "fnName=", fnName);
           let params = getParamNames(this.managers[mk][fnName], fnName, mk);
           params = params.split(",").map((i) => {
             i = i.trim();

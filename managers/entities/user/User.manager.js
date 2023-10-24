@@ -58,8 +58,7 @@ module.exports = class User {
     };
   }
   // ----------------------------------------------------------------------------------------------
-  async getUser({ __query }) {
-    console.log(`__query`, __query);
+  async getUser({ __longToken, __schoolAdmin, __query }) {
     const { id } = __query;
     return this.__findUser(id);
   }
