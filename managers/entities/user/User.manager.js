@@ -1,4 +1,4 @@
-module.exports = class Student {
+module.exports = class User {
   constructor({
     utils,
     cache,
@@ -23,27 +23,25 @@ module.exports = class Student {
     ];
   }
 
-  async createUser(user) {
-    // const user = { username, email, password };
+  async createUser({ username, email }) {
+    const user = { username, email };
 
     // Data validation
     const validationError = await this.validators.user.createUser(user);
 
     if (validationError) return validationError;
-
+    // const { username, email } = user;
     // Creation Logic
     const userId = Math.random().toString(36).substr(2);
     const role = "school_admin";
     const newUser = {
-      _id: "userId",
+      _id: userId,
       role,
       username,
       email,
-      password,
     };
 
     const savedUser = await this.oyster.call("add_block", {
-      // relation: this.collection,
       _label: this.collection,
       ...newUser,
     });
@@ -60,22 +58,38 @@ module.exports = class Student {
     };
   }
   // ----------------------------------------------------------------------------------------------
-  async getUser({ userId }) {
-    const user = await this.oyster.call("get_block", `user:userId`);
+  async getUser({ __query }) {
+    console.log(`__query`, __query);
+    const { id } = __query;
+    return this.__findUser(id);
+  }
+  // ----------------------------------------------------------------------------------------------
+  async __findUser(id) {
+    const user = await this.oyster.call(
+      "get_block",
+      `${this.collection}:${id}`
+    );
     if (!user || this.utils.isEmpty(user)) return { error: "user not found" };
     return user;
   }
   // ----------------------------------------------------------------------------------------------
-  async updateUser({ userId, username, email, password }) {
-    const validationError = await this.validators.user.createUser(user);
+  async updateUser({ __query, username, email }) {
+    //TODO: add validation
+    const { id } = __query;
+    const user = { username, email };
+    // const validationError = await this.validators.user.createUser(user);
+    // if (validationError) return validationError;
+    // const { userId, ...userData } = user;
+    const foundUser = await this.__findUser(id);
+    if (foundUser.error) return foundUser;
 
-    if (validationError) return validationError;
-    const user = await this.oyster.call("update_block", {
-      _id: `${this.collection}:${userId}`,
-      username,
+    const updatedUser = await this.oyster.call("update_block", {
+      _id: `${this.collection}:${id}`,
+      username: username || foundUser.username,
+      email: email || foundUser.email,
     });
 
-    return user;
+    return updatedUser;
   }
 
   // ----------------------------------------------------------------------------------------------
