@@ -32,8 +32,15 @@ module.exports = class User {
 
   // ----------------------------------------------------------------------------------------------
   // POST
-  async createSchoolAdmin({ __longToken, __superAdmin, username, schoolId }) {
-    const user = { username, schoolId };
+  async createSchoolAdmin({
+    __longToken,
+    __superAdmin,
+    username,
+    name,
+    password,
+    schoolId,
+  }) {
+    const user = { username, name, password, schoolId };
     const validationError = await this.validators.user.createSchoolAdmin(user);
     if (validationError) return validationError;
 
@@ -43,6 +50,8 @@ module.exports = class User {
     const newUser = {
       role: "school_admin",
       username,
+      name,
+      password,
       schoolId,
     };
 
@@ -69,10 +78,12 @@ module.exports = class User {
     __longToken,
     __schoolAdmin,
     username,
+    name,
+    password,
     classroomId,
     schoolId,
   }) {
-    const user = { username, classroomId };
+    const user = { username, name, password, classroomId };
     const admin = __longToken;
     //if user is a school admin, schoolId is taken from the token payload
     schoolId = admin.schoolId || schoolId;
@@ -94,6 +105,8 @@ module.exports = class User {
     const newUser = {
       role: "student",
       username,
+      name,
+      password,
       classroomId,
       schoolId,
     };
@@ -121,7 +134,7 @@ module.exports = class User {
     const userId = Math.random().toString(36).substring(2);
     const savedUser = await this.oyster.call("add_block", {
       _label: this.collection,
-      _id: userId,
+      _id: newUser.username,
       ...newUser,
     });
 
@@ -132,15 +145,15 @@ module.exports = class User {
   // GET
 
   async getSchoolAdmin({ __longToken, __superAdmin, __query }) {
-    const { id } = __query;
-    const user = await this._getUser(id);
+    const { username } = __query;
+    const user = await this._getUser(username);
     if (user?.role !== "school_admin") return { error: "user not found" };
     return user;
   }
 
   async getStudent({ __longToken, __schoolAdmin, __query }) {
-    const { id } = __query;
-    const user = await this._getUser(id);
+    const { username } = __query;
+    const user = await this._getUser(username);
     if (user?.role !== "student") return { error: "user not found" };
     return user;
   }
@@ -159,21 +172,23 @@ module.exports = class User {
     __longToken,
     __superAdmin,
     __query,
-    username,
+    name,
+    password,
     schoolId,
   }) {
-    const { id } = __query;
+    const { username } = __query;
     const user = { username, schoolId };
     const validationError = await this.validators.user.updateSchoolAdmin(user);
     if (validationError) return validationError;
 
-    const foundUser = await this._getUser(id);
+    const foundUser = await this._getUser(username);
     if (foundUser.error) return foundUser;
     if (foundUser.role !== "school_admin") return { error: "user not found" };
 
     const updatedUser = await this.oyster.call("update_block", {
-      _id: `${this.collection}:${id}`,
-      username: username || foundUser.username,
+      _id: `${this.collection}:${username}`,
+      name: name || foundUser.name,
+      password: password || foundUser.password,
       schoolId: schoolId || foundUser.schoolId,
     });
 
@@ -185,21 +200,22 @@ module.exports = class User {
     __longToken,
     __schoolAdmin,
     __query,
-    username,
+    name,
+    password,
     classroomId,
     schoolId,
   }) {
-    const { id } = __query;
+    const { username } = __query;
     const user = { username, classroomId, schoolId };
     const admin = __longToken;
     const validationError = await this.validators.user.updateStudent(user);
     if (validationError) return validationError;
 
-    const foundUser = await this._getUser(id);
+    const foundUser = await this._getUser(username);
     if (foundUser.error) return foundUser;
     if (foundUser.role !== "student") return { error: "user not found" };
 
-    // if schoolId is provided in body take the id from token in case of school admin, otherwise take from body
+    // if schoolId is provided in body take the username from token in case of school admin, otherwise take from body
     schoolId = admin.schoolId || schoolId;
 
     if (classroomId) {
@@ -213,8 +229,9 @@ module.exports = class User {
     }
 
     const updatedUser = await this.oyster.call("update_block", {
-      _id: `${this.collection}:${id}`,
-      username: username || foundUser.username,
+      _id: `${this.collection}:${username}`,
+      name: name || foundUser.name,
+      password: password || foundUser.password,
       classroomId: classroomId || foundUser.classroomId,
       schoolId: schoolId || foundUser.schoolId,
     });
@@ -225,25 +242,25 @@ module.exports = class User {
   // ----------------------------------------------------------------------------------------------
   // DELETE
   async removeSchoolAdmin({ __longToken, __superAdmin, __query }) {
-    const { id } = __query;
-    const user = await this._getUser(id);
+    const { username } = __query;
+    const user = await this._getUser(username);
     if (user?.role !== "school_admin") return { error: "user not found" };
-    return await this.removeUser(id);
+    return await this._removeUser(username);
   }
 
   async removeStudent({ __longToken, __schoolAdmin, __query }) {
     const admin = __longToken;
-    const { id } = __query;
-    const user = await this._getUser(id);
+    const { username } = __query;
+    const user = await this._getUser(username);
     if (user?.role !== "student" || admin.schoolId !== user.schoolId)
       return { error: "user not found" };
-    return await this.removeUser(id);
+    return await this._removeUser(username);
   }
 
-  async removeUser() {
+  async removeUser(username) {
     const user = await this.oyster.call(
       "delete_block",
-      `${this.collection}:userId`
+      `${this.collection}:${username}`
     );
     return user;
   }

@@ -5,6 +5,14 @@ module.exports = {
       required: true,
     },
     {
+      model: "password",
+      required: true,
+    },
+    {
+      model: "fullName",
+      required: true,
+    },
+    {
       model: "schoolId",
       required: true,
     },
@@ -13,6 +21,14 @@ module.exports = {
   createStudent: [
     {
       model: "username",
+      required: true,
+    },
+    {
+      model: "password",
+      required: true,
+    },
+    {
+      model: "fullName",
       required: true,
     },
     {
@@ -28,6 +44,13 @@ module.exports = {
       model: "username",
     },
     {
+      model: "password",
+    },
+    {
+      model: "fullName",
+    },
+
+    {
       model: "schoolId",
     },
   ],
@@ -35,6 +58,12 @@ module.exports = {
   updateStudent: [
     {
       model: "username",
+    },
+    {
+      model: "password",
+    },
+    {
+      model: "fullName",
     },
     {
       model: "classroomId",
