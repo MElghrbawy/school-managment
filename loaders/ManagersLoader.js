@@ -65,9 +65,9 @@ module.exports = class ManagersLoader {
     this.managers.shark = new SharkFin({ ...this.injectable, layers, actions });
     this.managers.timeMachine = new TimeMachine(this.injectable);
     this.managers.token = new TokenManager(this.injectable);
-    this.managers.user = new User(this.injectable);
     this.managers.school = new School(this.injectable);
     this.managers.classroom = new ClassRoom(this.injectable);
+    this.managers.user = new User(this.injectable);
     /*************************************************************************************************/
     this.managers.mwsExec = new VirtualStack({
       ...{ preStack: [/* '__token', */ "__device"] },

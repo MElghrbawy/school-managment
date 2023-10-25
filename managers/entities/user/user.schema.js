@@ -1,7 +1,11 @@
 module.exports = {
-  createUser: [
+  createSchoolAdmin: [
     {
       model: "username",
+      required: true,
+    },
+    {
+      model: "schoolId",
       required: true,
     },
   ],

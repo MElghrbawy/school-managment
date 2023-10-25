@@ -14,6 +14,7 @@ module.exports = class User {
     this.oyster = oyster;
     this.utils = utils;
     this.tokenManager = managers.token;
+    this.schoolManager = managers.school;
     this.collection = "user";
     this.httpExposed = [
       "createSchoolAdmin",
@@ -28,8 +29,11 @@ module.exports = class User {
   // POST
   async createSchoolAdmin({ __longToken, __superAdmin, username, schoolId }) {
     const user = { username, schoolId };
-    const validationError = await this.validators.user.createUser(user);
+    const validationError = await this.validators.user.createSchoolAdmin(user);
     if (validationError) return validationError;
+
+    const school = await this.schoolManager.findSchool(schoolId);
+    if (school?.error) return school;
 
     const newUser = {
       role: "school_admin",

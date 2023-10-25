@@ -13,6 +13,7 @@ module.exports = class ClassRoom {
     this.validators = validators;
     this.oyster = oyster;
     this.utils = utils;
+    this.schoolManager = managers.school;
     this.tokenManager = managers.token;
     this.collection = "classroom";
     this.httpExposed = [
@@ -22,7 +23,7 @@ module.exports = class ClassRoom {
       "delete=removeClassroom",
     ];
   }
-
+  //Post
   async createClassroom({ __longToken, __schoolAdmin, name, schoolId }) {
     const classroom = { name };
 
@@ -31,6 +32,10 @@ module.exports = class ClassRoom {
     //if user is a school admin, schoolId is taken from the token payload
     //if user is a super admin, schoolId is taken from the request body
     schoolId = admin.schoolId || schoolId;
+
+    //check if school exists if superAdmin
+    const school = await this.schoolManager.findSchool(schoolId);
+    if (school?.error) return school;
 
     // Data validation
     const validationError = await this.validators.classroom.createClassroom(
@@ -57,6 +62,7 @@ module.exports = class ClassRoom {
     };
   }
   // ----------------------------------------------------------------------------------------------
+  // GET
   async getClassroom({ __longToken, __schoolAdmin, __query }) {
     const admin = __longToken;
 
@@ -72,13 +78,13 @@ module.exports = class ClassRoom {
       `${this.collection}:${id}`
     );
 
+    //authorize
     const emptyClassroom = !classroom || this.utils.isEmpty(classroom);
     //if user is a school admin, check if the classroom belongs to the school
     //if user is a super admin, skip this check when schoolId is not provided
-    const notClassroomSchoolAdmin =
-      !schoolId && classroom.schoolId !== schoolId;
+    const classroomSchoolAdmin = !schoolId || classroom.schoolId === schoolId;
 
-    if (emptyClassroom || notClassroomSchoolAdmin)
+    if (emptyClassroom || !classroomSchoolAdmin)
       return { error: "classroom not found" };
     return classroom;
   }
@@ -117,6 +123,12 @@ module.exports = class ClassRoom {
 
   async removeClassroom({ __longToken, __schoolAdmin, __query }) {
     const { id } = __query;
+
+    const admin = __longToken;
+
+    const foundClassroom = await this._findClassroom(id, admin.schoolId);
+    if (foundClassroom.error) return foundClassroom;
+
     const classroom = await this.oyster.call(
       "delete_block",
       `${this.collection}:${id}`

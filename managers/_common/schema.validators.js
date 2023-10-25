@@ -12,4 +12,11 @@ module.exports = {
         }
         return true;
     },
+    'schoolId': (data)=>{
+        if(data.length !== 12){
+            return false;
+        }
+        return true;
+    }
+
 }
