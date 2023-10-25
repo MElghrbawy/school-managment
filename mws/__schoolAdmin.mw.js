@@ -1,23 +1,24 @@
 module.exports = ({ meta, config, managers }) => {
   return async ({ req, res, next }) => {
-    const { role } = req.decoded;
+    const { role, username } = req.decoded;
 
     //check if user exists in db
     const foundUser = await managers.user.getUser({
-      username: req.decoded.username,
+      username: username,
     });
 
     if (
-      !foundUser ||
-      managers.utils.isEmpty(foundUser) ||
-      !["school_admin", "super_admin"].includes(role)
+      foundUser &&
+      !(Object.keys(foundUser).length === 0) &&
+      ["school_admin", "super_admin"].includes(role)
     ) {
-      return managers.responseDispatcher.dispatch(res, {
-        ok: false,
-        code: 401,
-        errors: "unauthorized",
-      });
+      return next();
     }
-    next();
+
+    return managers.responseDispatcher.dispatch(res, {
+      ok: false,
+      code: 401,
+      errors: "unauthorized",
+    });
   };
 };
