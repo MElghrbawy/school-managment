@@ -22,9 +22,11 @@ module.exports = class User {
     this.httpExposed = [
       "createSchoolAdmin",
       "createStudent",
-      "get=getUser",
-      "put=updateUser",
-      "delete=removeUser",
+      "get=getSchoolAdmin",
+      "put=updateSchoolAdmin",
+      "put=updateStudent",
+      "delete=removeSchoolAdmin",
+      "delete=removeStudent",
     ];
   }
 
@@ -128,12 +130,22 @@ module.exports = class User {
 
   // ----------------------------------------------------------------------------------------------
   // GET
-  async getUser({ __longToken, __schoolAdmin, __query }) {
+
+  async getSchoolAdmin({ __longToken, __superAdmin, __query }) {
     const { id } = __query;
-    return this._findUser(id);
+    const user = await this._getUser(id);
+    if (user?.role !== "school_admin") return { error: "user not found" };
+    return user;
   }
 
-  async _findUser(id) {
+  async getStudent({ __longToken, __schoolAdmin, __query }) {
+    const { id } = __query;
+    const user = await this._getUser(id);
+    if (user?.role !== "student") return { error: "user not found" };
+    return user;
+  }
+
+  async _getUser(id) {
     const user = await this.oyster.call(
       "get_block",
       `${this.collection}:${id}`
@@ -143,19 +155,68 @@ module.exports = class User {
   }
   // ----------------------------------------------------------------------------------------------
   // PUT
-  async updateUser({ __query, username }) {
+  async updateSchoolAdmin({
+    __longToken,
+    __superAdmin,
+    __query,
+    username,
+    schoolId,
+  }) {
     const { id } = __query;
-    const user = { username };
-    // const validationError = await this.validators.user.createUser(user);
-    // if (validationError) return validationError;
-    // const { userId, ...userData } = user;
-    const foundUser = await this._findUser(id);
+    const user = { username, schoolId };
+    const validationError = await this.validators.user.updateSchoolAdmin(user);
+    if (validationError) return validationError;
+
+    const foundUser = await this._getUser(id);
     if (foundUser.error) return foundUser;
+    if (foundUser.role !== "school_admin") return { error: "user not found" };
 
     const updatedUser = await this.oyster.call("update_block", {
       _id: `${this.collection}:${id}`,
       username: username || foundUser.username,
-      email: email || foundUser.email,
+      schoolId: schoolId || foundUser.schoolId,
+    });
+
+    return foundUser;
+  }
+
+  // PUT
+  async updateStudent({
+    __longToken,
+    __schoolAdmin,
+    __query,
+    username,
+    classroomId,
+    schoolId,
+  }) {
+    const { id } = __query;
+    const user = { username, classroomId, schoolId };
+    const admin = __longToken;
+    const validationError = await this.validators.user.updateStudent(user);
+    if (validationError) return validationError;
+
+    const foundUser = await this._getUser(id);
+    if (foundUser.error) return foundUser;
+    if (foundUser.role !== "student") return { error: "user not found" };
+
+    // if schoolId is provided in body take the id from token in case of school admin, otherwise take from body
+    schoolId = admin.schoolId || schoolId;
+
+    if (classroomId) {
+      const classRoom = await this.classroomManager.findClassroom(classroomId);
+      if (classRoom?.error) return classRoom;
+
+      if (!schoolId && classRoom.schoolId !== foundUser.schoolId)
+        return { error: "classroom not in school" };
+      if (schoolId && classRoom.schoolId !== schoolId)
+        return { error: "classroom not in school" };
+    }
+
+    const updatedUser = await this.oyster.call("update_block", {
+      _id: `${this.collection}:${id}`,
+      username: username || foundUser.username,
+      classroomId: classroomId || foundUser.classroomId,
+      schoolId: schoolId || foundUser.schoolId,
     });
 
     return updatedUser;
@@ -163,6 +224,22 @@ module.exports = class User {
 
   // ----------------------------------------------------------------------------------------------
   // DELETE
+  async removeSchoolAdmin({ __longToken, __superAdmin, __query }) {
+    const { id } = __query;
+    const user = await this._getUser(id);
+    if (user?.role !== "school_admin") return { error: "user not found" };
+    return await this.removeUser(id);
+  }
+
+  async removeStudent({ __longToken, __schoolAdmin, __query }) {
+    const admin = __longToken;
+    const { id } = __query;
+    const user = await this._getUser(id);
+    if (user?.role !== "student" || admin.schoolId !== user.schoolId)
+      return { error: "user not found" };
+    return await this.removeUser(id);
+  }
+
   async removeUser() {
     const user = await this.oyster.call(
       "delete_block",

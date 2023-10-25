@@ -23,4 +23,24 @@ module.exports = {
       model: "schoolId",
     },
   ],
+  updateSchoolAdmin: [
+    {
+      model: "username",
+    },
+    {
+      model: "schoolId",
+    },
+  ],
+
+  updateStudent: [
+    {
+      model: "username",
+    },
+    {
+      model: "classroomId",
+    },
+    {
+      model: "schoolId",
+    },
+  ],
 };
