@@ -9,4 +9,15 @@ module.exports = {
       required: true,
     },
   ],
+
+  createStudent: [
+    {
+      model: "username",
+      required: true,
+    },
+    {
+      model: "classRoomId",
+      required: true,
+    },
+  ],
 };
