@@ -298,7 +298,7 @@ module.exports = class User {
     return await this._removeUser(username);
   }
 
-  async removeUser(username) {
+  async _removeUser(username) {
     const user = await this.oyster.call(
       "delete_block",
       `${this.collection}:${username}`
