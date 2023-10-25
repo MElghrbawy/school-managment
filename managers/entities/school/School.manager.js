@@ -28,10 +28,9 @@ module.exports = class School {
 
     // Data validation
     const validationError = await this.validators.school.createSchool(school);
-
     if (validationError) return validationError;
     // Creation Logic
-    const schoolId = Math.random().toString(36).substr(2);
+    const schoolId = Math.random().toString(36).substring(2);
     const newSchool = {
       _id: schoolId,
       name,
@@ -50,10 +49,10 @@ module.exports = class School {
   // ----------------------------------------------------------------------------------------------
   async getSchool({ __longToken, __superAdmin, __query }) {
     const { id } = __query;
-    return this._findSchool(id);
+    return this.findSchool(id);
   }
   // ----------------------------------------------------------------------------------------------
-  async _findSchool(id) {
+  async findSchool(id) {
     const school = await this.oyster.call(
       "get_block",
       `${this.collection}:${id}`
@@ -69,7 +68,7 @@ module.exports = class School {
     const validationError = await this.validators.school.updateSchool(school);
     if (validationError) return validationError;
 
-    const foundSchool = await this._findSchool(id);
+    const foundSchool = await this.findSchool(id);
     if (foundSchool.error) return foundSchool;
 
     const updatedSchool = await this.oyster.call("update_block", {

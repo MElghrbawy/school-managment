@@ -38,7 +38,7 @@ module.exports = class ClassRoom {
 
     if (validationError) return validationError;
     // Creation Logic
-    const classroomId = Math.random().toString(36).substr(2);
+    const classroomId = Math.random().toString(36).substring(2);
     const role = "classroom_admin";
     const newClassroom = {
       _id: classroomId,

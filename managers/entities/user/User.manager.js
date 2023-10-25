@@ -16,7 +16,8 @@ module.exports = class User {
     this.tokenManager = managers.token;
     this.collection = "user";
     this.httpExposed = [
-      "createUser",
+      "createSchoolAdmin",
+      "createStudent",
       "get=getUser",
       "put=updateUser",
       "delete=removeUser",
@@ -25,55 +26,27 @@ module.exports = class User {
 
   // ----------------------------------------------------------------------------------------------
 
-  async createSchoolAdmin({
-    __longToken,
-    __SuperAdmin,
-    username,
-    email,
-    schoolId,
-  }) {
-    const user = { username, email, schoolId };
-    const error = this.validateUserCreation(user);
-    if (error) return error;
+  async createSchoolAdmin({ __longToken, __superAdmin, username, schoolId }) {
+    const user = { username, schoolId };
+    const validationError = await this.validators.user.createUser(user);
+    if (validationError) return validationError;
 
-    const role = "school_admin";
     const newUser = {
-      role,
+      role: "school_admin",
       username,
-      email,
       schoolId,
     };
 
-    return await this.createUser(newUser);
-  }
+    //Save user into DB
+    const savedUser = await this._createUser(newUser);
+    if (!savedUser || this.utils.isEmpty(savedUser))
+      return { error: "user creation failed" };
 
-  async createUser(newUser) {
-    // const user = { username, email };
-
-    // // Data validation
-    // const validationError = await this.validators.user.createUser(user);
-
-    // if (validationError) return validationError;
-    // // const { username, email } = user;
-    // // Creation Logic
-    // const role = "super_admin";
-    const userId = Math.random().toString(36).substr(2);
-    // const newUser = {
-    //   _id: userId,
-    //   role,
-    //   username,
-    //   email,
-    // };
-
-    const savedUser = await this.oyster.call("add_block", {
-      _label: this.collection,
-      _id: `${this.collection}:${userId}`,
-      ...newUser,
-    });
-
-    const longToken = this.tokenManager.genLongToken({
+    //Generate Token
+    const longToken = await this._generateToken({
       userId: savedUser._id,
       role: savedUser.role,
+      schoolId: savedUser.schoolId,
     });
 
     // Response
@@ -83,16 +56,60 @@ module.exports = class User {
     };
   }
 
-  async validateUserCreation(user) {
+  async createStudent({ __longToken, __superAdmin, username, classroomId }) {
+    const user = { username, classroomId };
     const validationError = await this.validators.user.createUser(user);
-    return validationError;
+    if (validationError) return validationError;
+
+    const newUser = {
+      role: "student",
+      username,
+      classroomId,
+    };
+
+    //Save user into DB
+    const savedUser = await this._createUser(newUser);
+    if (!savedUser || this.utils.isEmpty(savedUser))
+      return { error: "user creation failed" };
+
+    //Generate Token
+    const longToken = await this._generateToken({
+      userId: savedUser._id,
+      role: savedUser.role,
+      classroomId: savedUser.classroomId,
+    });
+
+    // Response
+    return {
+      user: savedUser,
+      longToken,
+    };
   }
+
+  async _createUser(newUser) {
+    const userId = Math.random().toString(36).substring(2);
+    const savedUser = await this.oyster.call("add_block", {
+      _label: this.collection,
+      _id: userId,
+      ...newUser,
+    });
+
+    return savedUser;
+  }
+
+  async _generateToken(payload) {
+    const longToken = this.tokenManager.genLongToken({
+      ...payload,
+    });
+    return longToken;
+  }
+
   // ----------------------------------------------------------------------------------------------
   async getUser({ __longToken, __schoolAdmin, __query }) {
     const { id } = __query;
     return this.__findUser(id);
   }
-  // ----------------------------------------------------------------------------------------------
+
   async __findUser(id) {
     const user = await this.oyster.call(
       "get_block",
@@ -102,10 +119,9 @@ module.exports = class User {
     return user;
   }
   // ----------------------------------------------------------------------------------------------
-  async updateUser({ __query, username, email }) {
-    //TODO: add validation
+  async updateUser({ __query, username }) {
     const { id } = __query;
-    const user = { username, email };
+    const user = { username };
     // const validationError = await this.validators.user.createUser(user);
     // if (validationError) return validationError;
     // const { userId, ...userData } = user;
