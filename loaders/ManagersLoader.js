@@ -13,7 +13,8 @@ const TokenManager = require("../managers/token/Token.manager");
 const SharkFin = require("../managers/shark_fin/SharkFin.manager");
 const TimeMachine = require("../managers/time_machine/TimeMachine.manager");
 const User = require("../managers/entities/user/User.manager");
-
+const School = require("../managers/entities/school/School.manager");
+const ClassRoom = require("../managers/entities/classroom/Classroom.manager");
 /**
  * load sharable modules
  * @return modules tree with instance of each module
@@ -65,6 +66,8 @@ module.exports = class ManagersLoader {
     this.managers.timeMachine = new TimeMachine(this.injectable);
     this.managers.token = new TokenManager(this.injectable);
     this.managers.user = new User(this.injectable);
+    this.managers.school = new School(this.injectable);
+    this.managers.classroom = new ClassRoom(this.injectable);
     /*************************************************************************************************/
     this.managers.mwsExec = new VirtualStack({
       ...{ preStack: [/* '__token', */ "__device"] },

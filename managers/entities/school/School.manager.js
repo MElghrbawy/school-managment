@@ -23,8 +23,8 @@ module.exports = class School {
     ];
   }
 
-  async createSchool({ __longToken, __superAdmin, name, schoolAdminId }) {
-    const school = { name, schoolAdminId };
+  async createSchool({ __longToken, __superAdmin, name }) {
+    const school = { name };
 
     // Data validation
     const validationError = await this.validators.school.createSchool(school);
@@ -32,10 +32,8 @@ module.exports = class School {
     if (validationError) return validationError;
     // Creation Logic
     const schoolId = Math.random().toString(36).substr(2);
-    const role = "school_admin";
     const newSchool = {
       _id: schoolId,
-      schoolAdminId,
       name,
     };
 
@@ -44,24 +42,18 @@ module.exports = class School {
       ...newSchool,
     });
 
-    const longToken = this.tokenManager.genLongToken({
-      schoolId: savedSchool._id,
-      role: savedSchool.role,
-    });
-
     // Response
     return {
       school: savedSchool,
-      longToken,
     };
   }
   // ----------------------------------------------------------------------------------------------
   async getSchool({ __longToken, __superAdmin, __query }) {
     const { id } = __query;
-    return this.__findSchool(id);
+    return this._findSchool(id);
   }
   // ----------------------------------------------------------------------------------------------
-  async __findSchool(id) {
+  async _findSchool(id) {
     const school = await this.oyster.call(
       "get_block",
       `${this.collection}:${id}`
@@ -71,26 +63,18 @@ module.exports = class School {
     return school;
   }
   // ----------------------------------------------------------------------------------------------
-  async updateSchool({
-    __longToken,
-    __superAdmin,
-    __query,
-    name,
-    schoolAdminId,
-  }) {
-    //TODO: add validation
+  async updateSchool({ __longToken, __superAdmin, __query, name }) {
     const { id } = __query;
-    const school = { name, email };
-    // const validationError = await this.validators.school.createSchool(school);
-    // if (validationError) return validationError;
-    // const { schoolId, ...schoolData } = school;
-    const foundSchool = await this.__findSchool(id);
+    const school = { name };
+    const validationError = await this.validators.school.updateSchool(school);
+    if (validationError) return validationError;
+
+    const foundSchool = await this._findSchool(id);
     if (foundSchool.error) return foundSchool;
 
     const updatedSchool = await this.oyster.call("update_block", {
       _id: `${this.collection}:${id}`,
       name: name || foundSchool.name,
-      schoolAdminId: schoolAdminId || foundSchool.schoolAdminId,
     });
 
     return updatedSchool;
@@ -104,6 +88,7 @@ module.exports = class School {
       "delete_block",
       `${this.collection}:${id}`
     );
-    return school;
+    if (!school) return { error: "deleting failed" };
+    return `school deleted successfully`;
   }
 };

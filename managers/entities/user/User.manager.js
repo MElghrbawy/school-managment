@@ -23,26 +23,51 @@ module.exports = class User {
     ];
   }
 
-  async createUser({ username, email }) {
-    const user = { username, email };
+  // ----------------------------------------------------------------------------------------------
 
-    // Data validation
-    const validationError = await this.validators.user.createUser(user);
+  async createSchoolAdmin({
+    __longToken,
+    __SuperAdmin,
+    username,
+    email,
+    schoolId,
+  }) {
+    const user = { username, email, schoolId };
+    const error = this.validateUserCreation(user);
+    if (error) return error;
 
-    if (validationError) return validationError;
-    // const { username, email } = user;
-    // Creation Logic
-    const userId = Math.random().toString(36).substr(2);
     const role = "school_admin";
     const newUser = {
-      _id: userId,
       role,
       username,
       email,
+      schoolId,
     };
+
+    return await this.createUser(newUser);
+  }
+
+  async createUser(newUser) {
+    // const user = { username, email };
+
+    // // Data validation
+    // const validationError = await this.validators.user.createUser(user);
+
+    // if (validationError) return validationError;
+    // // const { username, email } = user;
+    // // Creation Logic
+    // const role = "super_admin";
+    const userId = Math.random().toString(36).substr(2);
+    // const newUser = {
+    //   _id: userId,
+    //   role,
+    //   username,
+    //   email,
+    // };
 
     const savedUser = await this.oyster.call("add_block", {
       _label: this.collection,
+      _id: `${this.collection}:${userId}`,
       ...newUser,
     });
 
@@ -56,6 +81,11 @@ module.exports = class User {
       user: savedUser,
       longToken,
     };
+  }
+
+  async validateUserCreation(user) {
+    const validationError = await this.validators.user.createUser(user);
+    return validationError;
   }
   // ----------------------------------------------------------------------------------------------
   async getUser({ __longToken, __schoolAdmin, __query }) {

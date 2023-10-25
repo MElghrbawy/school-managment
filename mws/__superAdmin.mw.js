@@ -1,6 +1,5 @@
 module.exports = ({ meta, config, managers }) => {
   return ({ req, res, next }) => {
-    console.log(req.decoded);
     const { role } = req.decoded;
     if (role !== "super_admin") {
       return managers.responseDispatcher.dispatch(res, {
