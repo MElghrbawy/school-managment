@@ -288,8 +288,12 @@ module.exports = class User {
   async removeStudent({ __longToken, __schoolAdmin, __query }) {
     const admin = __longToken;
     const { username } = __query;
+    const notSuperAdmin = admin.role !== "super_admin";
     const user = await this.findUser(username);
-    if (user?.role !== "student" || admin.schoolId !== user.schoolId)
+    if (
+      user?.role !== "student" ||
+      (notSuperAdmin && user.schoolId !== admin.schoolId)
+    )
       return { error: "user not found" };
     return await this._removeUser(username);
   }
@@ -299,6 +303,6 @@ module.exports = class User {
       "delete_block",
       `${this.collection}:${username}`
     );
-    return user;
+    return "user deleted successfully";
   }
 };
