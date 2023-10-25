@@ -133,6 +133,6 @@ module.exports = class ClassRoom {
       "delete_block",
       `${this.collection}:${id}`
     );
-    return classroom;
+    return `school deleted successfully`;
   }
 };

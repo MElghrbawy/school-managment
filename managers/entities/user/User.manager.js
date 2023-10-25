@@ -99,9 +99,9 @@ module.exports = class User {
     });
 
     // Response
+    delete savedUser.password;
     return {
-      user: { password, ...savedUser },
-      longToken,
+      user: savedUser,
     };
   }
   // POST
@@ -155,9 +155,9 @@ module.exports = class User {
     });
 
     // Response
+    delete savedUser.password;
     return {
-      user: { password, ...savedUser },
-      longToken,
+      user: savedUser,
     };
   }
 
