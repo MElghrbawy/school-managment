@@ -100,7 +100,7 @@ module.exports = class User {
 
     // Response
     return {
-      user: savedUser,
+      user: { password, ...savedUser },
       longToken,
     };
   }
@@ -156,7 +156,7 @@ module.exports = class User {
 
     // Response
     return {
-      user: savedUser,
+      user: { password, ...savedUser },
       longToken,
     };
   }
@@ -176,24 +176,29 @@ module.exports = class User {
 
   async getSchoolAdmin({ __longToken, __superAdmin, __query }) {
     const { username } = __query;
-    const user = await this.getUser(username);
+    const user = await this.findUser(username);
     if (user?.role !== "school_admin") return { error: "user not found" };
+
+    delete user.password;
     return user;
   }
 
   async getStudent({ __longToken, __schoolAdmin, __query }) {
     const { username } = __query;
-    const user = await this.getUser(username);
+    const user = await this.findUser(username);
     if (user?.role !== "student") return { error: "user not found" };
+
+    delete user.password;
     return user;
   }
 
-  async getUser(id) {
+  async findUser(id) {
     const user = await this.oyster.call(
       "get_block",
       `${this.collection}:${id}`
     );
     if (!user || this.utils.isEmpty(user)) return { error: "user not found" };
+
     return user;
   }
   // ----------------------------------------------------------------------------------------------
@@ -211,7 +216,7 @@ module.exports = class User {
     const validationError = await this.validators.user.updateSchoolAdmin(user);
     if (validationError) return validationError;
 
-    const foundUser = await this.getUser(username);
+    const foundUser = await this.findUser(username);
     if (foundUser.error) return foundUser;
     if (foundUser.role !== "school_admin") return { error: "user not found" };
 
@@ -222,7 +227,8 @@ module.exports = class User {
       schoolId: schoolId || foundUser.schoolId,
     });
 
-    return foundUser;
+    delete updatedUser.password;
+    return updatedUser;
   }
 
   // PUT
@@ -241,7 +247,7 @@ module.exports = class User {
     const validationError = await this.validators.user.updateStudent(user);
     if (validationError) return validationError;
 
-    const foundUser = await this.getUser(username);
+    const foundUser = await this.findUser(username);
     if (foundUser.error) return foundUser;
     if (foundUser.role !== "student") return { error: "user not found" };
 
@@ -266,6 +272,7 @@ module.exports = class User {
       schoolId: schoolId || foundUser.schoolId,
     });
 
+    delete updatedUser.password;
     return updatedUser;
   }
 
@@ -273,7 +280,7 @@ module.exports = class User {
   // DELETE
   async removeSchoolAdmin({ __longToken, __superAdmin, __query }) {
     const { username } = __query;
-    const user = await this.getUser(username);
+    const user = await this.findUser(username);
     if (user?.role !== "school_admin") return { error: "user not found" };
     return await this._removeUser(username);
   }
@@ -281,7 +288,7 @@ module.exports = class User {
   async removeStudent({ __longToken, __schoolAdmin, __query }) {
     const admin = __longToken;
     const { username } = __query;
-    const user = await this.getUser(username);
+    const user = await this.findUser(username);
     if (user?.role !== "student" || admin.schoolId !== user.schoolId)
       return { error: "user not found" };
     return await this._removeUser(username);

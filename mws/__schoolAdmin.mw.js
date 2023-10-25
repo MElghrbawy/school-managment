@@ -3,7 +3,7 @@ module.exports = ({ meta, config, managers }) => {
     const { role, username } = req.decoded;
 
     //check if user exists in db
-    const foundUser = await managers.user.getUser({
+    const foundUser = await managers.user.findUser({
       username: username,
     });
 
