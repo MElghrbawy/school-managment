@@ -67,12 +67,12 @@ module.exports = class ClassRoom {
     const admin = __longToken;
 
     const { id } = __query;
-    const classRoom = this._findClassroom(id, admin.schoolId);
+    const classRoom = this.findClassroom(id, admin.schoolId);
 
     return classRoom;
   }
   // ----------------------------------------------------------------------------------------------
-  async _findClassroom(id, schoolId) {
+  async findClassroom(id, schoolId) {
     const classroom = await this.oyster.call(
       "get_block",
       `${this.collection}:${id}`
@@ -105,7 +105,7 @@ module.exports = class ClassRoom {
     );
     if (validationError) return validationError;
 
-    const foundClassroom = await this._findClassroom(id, admin.schoolId);
+    const foundClassroom = await this.findClassroom(id, admin.schoolId);
     if (foundClassroom.error) return foundClassroom;
 
     const updatedClassroom = await this.oyster.call("update_block", {
@@ -126,7 +126,7 @@ module.exports = class ClassRoom {
 
     const admin = __longToken;
 
-    const foundClassroom = await this._findClassroom(id, admin.schoolId);
+    const foundClassroom = await this.findClassroom(id, admin.schoolId);
     if (foundClassroom.error) return foundClassroom;
 
     const classroom = await this.oyster.call(

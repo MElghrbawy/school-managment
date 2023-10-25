@@ -16,8 +16,11 @@ module.exports = {
       required: true,
     },
     {
-      model: "classRoomId",
+      model: "classroomId",
       required: true,
+    },
+    {
+      model: "schoolId",
     },
   ],
 };

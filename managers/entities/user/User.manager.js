@@ -1,3 +1,5 @@
+const { schoolId } = require("../../_common/schema.models");
+
 module.exports = class User {
   constructor({
     utils,
@@ -15,6 +17,7 @@ module.exports = class User {
     this.utils = utils;
     this.tokenManager = managers.token;
     this.schoolManager = managers.school;
+    this.classroomManager = managers.classroom;
     this.collection = "user";
     this.httpExposed = [
       "createSchoolAdmin",
@@ -44,7 +47,7 @@ module.exports = class User {
     //Save user into DB
     const savedUser = await this._createUser(newUser);
     if (!savedUser || this.utils.isEmpty(savedUser))
-      return { error: "user creation failed" };
+      return { error: "school admin creation failed" };
 
     //Generate Token
     const longToken = await this.tokenManager.genLongToken({
@@ -60,21 +63,43 @@ module.exports = class User {
     };
   }
   // POST
-  async createStudent({ __longToken, __schoolAdmin, username, classroomId }) {
+  async createStudent({
+    __longToken,
+    __schoolAdmin,
+    username,
+    classroomId,
+    schoolId,
+  }) {
     const user = { username, classroomId };
-    const validationError = await this.validators.user.createUser(user);
+    const admin = __longToken;
+    //if user is a school admin, schoolId is taken from the token payload
+    schoolId = admin.schoolId || schoolId;
+
+    // SchoolId is required from superAdmin
+    if (!schoolId) return { error: "schoolId is required" };
+
+    const validationError = await this.validators.user.createStudent(user);
     if (validationError) return validationError;
+
+    //check if classRoom exists
+    const classRoom = await this.classroomManager.findClassroom(classroomId);
+    if (classRoom?.error) return classRoom;
+    //check if classRoom belongs to school
+    //if it's a school admin, schoolId must match classroom schoolId
+    if (schoolId !== classRoom.schoolId)
+      return { error: "classroom not found" };
 
     const newUser = {
       role: "student",
       username,
       classroomId,
+      schoolId,
     };
 
     //Save user into DB
     const savedUser = await this._createUser(newUser);
     if (!savedUser || this.utils.isEmpty(savedUser))
-      return { error: "user creation failed" };
+      return { error: "student creation failed" };
 
     //Generate Token
     const longToken = await this.tokenManager.genLongToken({

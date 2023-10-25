@@ -22,6 +22,11 @@ module.exports = {
     type: "String",
     length: { min: 3, max: 100 },
   },
+  classroomId: {
+    path: "classroomId",
+    type: "string",
+    length: { min: 3, max: 100 },
+  },
   password: {
     path: "password",
     type: "string",
