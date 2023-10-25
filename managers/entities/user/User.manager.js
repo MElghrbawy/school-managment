@@ -25,7 +25,7 @@ module.exports = class User {
   }
 
   // ----------------------------------------------------------------------------------------------
-
+  // POST
   async createSchoolAdmin({ __longToken, __superAdmin, username, schoolId }) {
     const user = { username, schoolId };
     const validationError = await this.validators.user.createUser(user);
@@ -43,7 +43,7 @@ module.exports = class User {
       return { error: "user creation failed" };
 
     //Generate Token
-    const longToken = await this._generateToken({
+    const longToken = await this.tokenManager.genLongToken({
       userId: savedUser._id,
       role: savedUser.role,
       schoolId: savedUser.schoolId,
@@ -55,8 +55,8 @@ module.exports = class User {
       longToken,
     };
   }
-
-  async createStudent({ __longToken, __superAdmin, username, classroomId }) {
+  // POST
+  async createStudent({ __longToken, __schoolAdmin, username, classroomId }) {
     const user = { username, classroomId };
     const validationError = await this.validators.user.createUser(user);
     if (validationError) return validationError;
@@ -73,7 +73,7 @@ module.exports = class User {
       return { error: "user creation failed" };
 
     //Generate Token
-    const longToken = await this._generateToken({
+    const longToken = await this.tokenManager.genLongToken({
       userId: savedUser._id,
       role: savedUser.role,
       classroomId: savedUser.classroomId,
@@ -97,20 +97,14 @@ module.exports = class User {
     return savedUser;
   }
 
-  async _generateToken(payload) {
-    const longToken = this.tokenManager.genLongToken({
-      ...payload,
-    });
-    return longToken;
-  }
-
   // ----------------------------------------------------------------------------------------------
+  // GET
   async getUser({ __longToken, __schoolAdmin, __query }) {
     const { id } = __query;
-    return this.__findUser(id);
+    return this._findUser(id);
   }
 
-  async __findUser(id) {
+  async _findUser(id) {
     const user = await this.oyster.call(
       "get_block",
       `${this.collection}:${id}`
@@ -119,13 +113,14 @@ module.exports = class User {
     return user;
   }
   // ----------------------------------------------------------------------------------------------
+  // PUT
   async updateUser({ __query, username }) {
     const { id } = __query;
     const user = { username };
     // const validationError = await this.validators.user.createUser(user);
     // if (validationError) return validationError;
     // const { userId, ...userData } = user;
-    const foundUser = await this.__findUser(id);
+    const foundUser = await this._findUser(id);
     if (foundUser.error) return foundUser;
 
     const updatedUser = await this.oyster.call("update_block", {
@@ -138,7 +133,7 @@ module.exports = class User {
   }
 
   // ----------------------------------------------------------------------------------------------
-
+  // DELETE
   async removeUser() {
     const user = await this.oyster.call(
       "delete_block",

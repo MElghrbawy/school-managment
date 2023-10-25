@@ -1,8 +1,13 @@
 module.exports = {
-  createSchool: [
+  createClassroom: [
     {
       model: "name",
       required: true,
+    },
+  ],
+  updateClassroom: [
+    {
+      model: "name",
     },
   ],
 };
