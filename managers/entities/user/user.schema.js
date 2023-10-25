@@ -1,4 +1,14 @@
 module.exports = {
+  login: [
+    {
+      model: "username",
+      required: true,
+    },
+    {
+      model: "password",
+      required: true,
+    },
+  ],
   createSchoolAdmin: [
     {
       model: "username",
@@ -9,7 +19,7 @@ module.exports = {
       required: true,
     },
     {
-      model: "fullName",
+      model: "name",
       required: true,
     },
     {
@@ -28,7 +38,7 @@ module.exports = {
       required: true,
     },
     {
-      model: "fullName",
+      model: "name",
       required: true,
     },
     {
@@ -47,7 +57,7 @@ module.exports = {
       model: "password",
     },
     {
-      model: "fullName",
+      model: "name",
     },
 
     {
@@ -63,7 +73,7 @@ module.exports = {
       model: "password",
     },
     {
-      model: "fullName",
+      model: "name",
     },
     {
       model: "classroomId",
